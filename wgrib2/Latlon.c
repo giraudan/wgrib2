@@ -23,6 +23,8 @@ extern int WxNum, WxText;
 extern int scan, nx, ny, GDS_change_no;
 extern unsigned int npnts;
 
+extern char populate_grid;
+extern WindDataArray global_wind_grid;
 
 /*
  * HEADER:100:ij:inv:2:value of field at grid(X,Y) X=1,..,nx Y=1,..,ny (WxText enabled)
@@ -180,6 +182,17 @@ int f_ilat(ARG1) {
  * HEADER:100:lon:inv:2:value at grid point nearest lon=X lat=Y (WxText enabled)
  */
 
+void append_windcell_to_grid(const float *data, const int data_idx) {
+    windcell new_wind_cell;
+    new_wind_cell.latitude = lat[data_idx];
+    new_wind_cell.longitude = lon[data_idx];
+    new_wind_cell.ugrd = data[data_idx]; // TODO | try to differentiate UGRD and VGRD
+    new_wind_cell.vgrd = data[data_idx]; // TODO | try to differentiate UGRD and VGRD
+    new_wind_cell.barometric_altitude = 0; // TODO | figure out where to get that info
+    new_wind_cell.timestamp = 0; // TODO | figure out where to get that info
+    append_wind_data(&global_wind_grid, new_wind_cell);
+}
+
 int f_lon(ARG2) {
 
     struct local_struct {
@@ -226,7 +239,14 @@ int f_lon(ARG2) {
     if (mode == 0) {
         if (WxNum > 0) sprintf(inv_out,"lon=%lf,lat=%lf,val=\"%s\"",lon[save->iptr],lat[save->iptr],
 		WxLabel(data[save->iptr]));
-        else sprintf(inv_out,"lon=%lf,lat=%lf,val=%lg",lon[save->iptr],lat[save->iptr],data[save->iptr]);
+        else {
+            int data_idx = save->iptr;
+            if (populate_grid) {
+                // don't just print the info to stdout, also store it in the global grid to return
+                append_windcell_to_grid(data, data_idx);
+            }
+            sprintf(inv_out, "lon=%lf,lat=%lf,val=%lg", lon[save->iptr], lat[save->iptr], data[save->iptr]);
+        }
     }
     else {
 	sprintf(inv_out,"lon=%lf,lat=%lf,i=%d,", lon[save->iptr],lat[save->iptr],(save->iptr)+1);

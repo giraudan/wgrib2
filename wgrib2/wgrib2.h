@@ -705,6 +705,25 @@ void ipolatev_grib2_single_field(int *interpol, int *ipopt, int *gdt_in, int *gd
 void use_ncep_post_arakawa(void);
 #endif /* USE_IPOLATES */
 
+typedef struct {
+    double latitude;
+    double longitude;
+    double barometric_altitude;
+    long long timestamp;
+    double ugrd;
+    double vgrd;
+} windcell;
 
+typedef struct {
+    windcell *data;
+    size_t size;
+    size_t capacity;
+} WindDataArray;
+
+WindDataArray read_wind_grid(int argc, const char **argv);
+void init_wind_data_array(WindDataArray *arr, size_t initial_capacity);
+void append_wind_data(WindDataArray *arr, windcell value);
+void free_wind_data_array(WindDataArray *arr);
 
 #endif /* _WGRIB2_H_ */
+
